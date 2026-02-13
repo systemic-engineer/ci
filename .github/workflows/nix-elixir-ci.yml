@@ -1,0 +1,82 @@
+name: Nix Elixir CI (Reusable)
+# Matches local development environment using Nix flakes
+
+on:
+  workflow_call:
+    inputs:
+      nix-installer:
+        description: 'Nix installer (determinate, official)'
+        required: false
+        type: string
+        default: 'determinate'
+      enable-cachix:
+        description: 'Enable Cachix caching'
+        required: false
+        type: boolean
+        default: false
+      cachix-name:
+        description: 'Cachix cache name'
+        required: false
+        type: string
+        default: ''
+      run-tests:
+        description: 'Run tests'
+        required: false
+        type: boolean
+        default: true
+      run-coverage:
+        description: 'Collect coverage'
+        required: false
+        type: boolean
+        default: false
+      run-quality:
+        description: 'Run quality checks'
+        required: false
+        type: boolean
+        default: true
+      run-dialyzer:
+        description: 'Run Dialyzer'
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      CACHIX_AUTH_TOKEN:
+        description: 'Cachix auth token'
+        required: false
+
+jobs:
+  test:
+    if: inputs.run-tests
+    name: Test (Nix)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/nix-setup
+        with:
+          nix-installer: ${{ inputs.nix-installer }}
+          enable-cachix: ${{ inputs.enable-cachix }}
+          cachix-name: ${{ inputs.cachix-name }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - uses: ./.github/actions/nix-elixir-test
+        with:
+          coverage: ${{ inputs.run-coverage }}
+
+  quality:
+    if: inputs.run-quality
+    name: Quality (Nix)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/nix-setup
+        with:
+          nix-installer: ${{ inputs.nix-installer }}
+          enable-cachix: ${{ inputs.enable-cachix }}
+          cachix-name: ${{ inputs.cachix-name }}
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - uses: ./.github/actions/nix-elixir-quality
+        with:
+          dialyzer: ${{ inputs.run-dialyzer }}
