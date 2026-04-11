@@ -1,0 +1,37 @@
+name: Rust (Nix)
+
+on:
+  workflow_call:
+    inputs:
+      coverage_threshold:
+        description: 'Minimum line coverage percentage'
+        required: false
+        default: '99'
+        type: string
+      features:
+        description: 'Cargo features to enable'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: systemic-engineering/ci/actions/nix-setup@main
+
+      - name: Build
+        run: nix develop -c cargo build --workspace ${{ inputs.features && format('--features {0}', inputs.features) || '' }}
+
+      - name: Test
+        run: nix develop -c cargo test --workspace ${{ inputs.features && format('--features {0}', inputs.features) || '' }}
+
+      - name: Coverage
+        run: |
+          nix develop -c cargo llvm-cov --workspace ${{ inputs.features && format('--features {0}', inputs.features) || '' }} --fail-under-lines ${{ inputs.coverage_threshold }}
+
+      - name: Clippy
+        run: nix develop -c cargo clippy --workspace ${{ inputs.features && format('--features {0}', inputs.features) || '' }} -- -D warnings
+        continue-on-error: true
