@@ -30,6 +30,10 @@ on:
         default: true
         type: boolean
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   docs:
     name: docs
@@ -40,6 +44,8 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
 
       - uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Build documentation
         uses: systemic-engineering/ci/actions/nix-elixir-docs@main
